@@ -10,7 +10,7 @@ defmodule Teamplace.Application do
     children = [
       # Starts a worker by calling: Teamplace.Worker.start_link(arg)
       # {Teamplace.Worker, arg},
-      {Teamplace, []},
+      {Teamplace.Worker, []},
 
     ]
 

@@ -1,36 +1,33 @@
 defmodule Teamplace do
-  use Agent
-
   @moduledoc """
-  Documentation for Teamplace.
+  Documentation for Teamplace Wrapper API.
   """
 
   @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> Teamplace.hello
-      :world
+    Get Data
 
   """
-  def start_link(_args) do
-    Agent.start_link(fn -> %{} end, name: :teamplace)
-  end
-
-  def get_token(current_user) do
-    Agent.get(:teamplace, & &1[current_user.username]) || new_token(current_user)
-  end
-
-  def get_data(current_user, resource, action, _params \\ nil) do
-    case HTTPoison.get!(url_factory(current_user, resource, action), [], recv_timeout: :infinity) do
+  def get_data(credentials, resource, action, _params \\ nil) do
+    case HTTPoison.get!(url_factory(credentials, resource, action), [], recv_timeout: :infinity) do
       %HTTPoison.Response{status_code: 406} ->
-        new_token(current_user)
-        get_data(current_user, resource, action)
+        new_token(credentials)
+        get_data(credentials, resource, action)
 
       %HTTPoison.Response{body: body} ->
         Poison.decode!(body)
     end
+  end
+
+  @doc """
+  Get Token.
+
+  ## Examples
+
+      iex> Teamplace.get_token
+      token1234
+  """
+  def get_token(%{"client_id" => client_id, "client_secret" => client_secret} = credentials) do
+    Agent.get(:teamplace, & &1[client_id]) || new_token(credentials)
   end
 
   def post_data(end_point, data) do
@@ -44,30 +41,30 @@ defmodule Teamplace do
     end
   end
 
-  defp url_factory(current_user, resource, action) do
+  defp url_factory(credentials, resource, action) do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
       action <>
       "?ACCESS_TOKEN=" <>
-      get_token(current_user) <>
+      get_token(credentials) <>
       "&PARAMWEBREPORT_TipoCheque=0&PARAMWEBREPORT_Estado=emitido&PARAMWEBREPORT_MostrarSoloNoConciliados=1&PARAMWEBREPORT_Empresa=EMPRE01"
   end
 
-  defp save_session(token, current_user) do
-    Agent.update(:teamplace, &Map.put(&1, current_user.username, token))
+  defp save_session(token, credentials) do
+    Agent.update(:teamplace, &Map.put(&1, credentials.client_id, token))
     token
   end
 
-  defp new_token(current_user) do
-    auth_url(current_user)
+  defp new_token(credentials) do
+    auth_url(credentials)
     |> HTTPoison.get!()
     |> Map.get(:body)
-    |> save_session(current_user)
+    |> save_session(credentials)
   end
 
-  defp auth_url(user) do
-    %{"client_id" => client_id, "client_secret" => client_secret} = user.credentials
+  defp auth_url(credentials) do
+    %{"client_id" => client_id, "client_secret" => client_secret} = credentials
 
     Application.get_env(:teamplace, :api_base) <>
       "oauth/token?grant_type=client_credentials&client_id=#{client_id}&client_secret=#{
