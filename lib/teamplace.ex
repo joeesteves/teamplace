@@ -1,5 +1,6 @@
 defmodule Teamplace do
   use Agent
+
   @moduledoc """
   Documentation for Teamplace.
   """
@@ -13,10 +14,7 @@ defmodule Teamplace do
       :world
 
   """
-  @api_base "https://3.teamplace.finneg.com/BSA/api/"
-
   def start_link(_args) do
-    IO.inspect Application.get_env(:teamplace, :test)
     Agent.start_link(fn -> %{} end, name: :teamplace)
   end
 
@@ -47,7 +45,7 @@ defmodule Teamplace do
   end
 
   defp url_factory(current_user, resource, action) do
-    @api_base <>
+    Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
       action <>
@@ -71,7 +69,7 @@ defmodule Teamplace do
   defp auth_url(user) do
     %{"client_id" => client_id, "client_secret" => client_secret} = user.credentials
 
-    @api_base <>
+    Application.get_env(:teamplace, :api_base) <>
       "oauth/token?grant_type=client_credentials&client_id=#{client_id}&client_secret=#{
         client_secret
       }"

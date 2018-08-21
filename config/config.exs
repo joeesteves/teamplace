@@ -10,7 +10,7 @@ use Mix.Config
 
 # You can configure your application as:
 #
-    config :teamplace, test: "HOLA TEAMPLACE"
+#    config :teamplace, test: "HOLA TEAMPLACE"
 #
 # and access this configuration in your application as:
 #

@@ -15,7 +15,8 @@ defmodule Teamplace.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {Teamplace.Application, []}
+      mod: {Teamplace.Application, []},
+      env: [api_base: "https://3.teamplace.finneg.com/BSA/api/"]
     ]
   end
 
