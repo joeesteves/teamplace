@@ -52,7 +52,7 @@ defmodule Teamplace do
   end
 
   defp save_session(token, credentials) do
-    Agent.update(:teamplace, &Map.put(&1, credentials.client_id, token))
+    Agent.update(:teamplace, &Map.put(&1, credentials["client_id"], token))
     token
   end
 
