@@ -18,8 +18,14 @@ defmodule Teamplace.Helpers do
   @spec param_query_parser(Map.t) :: String.t
   def param_query_parser(nil), do: ""
   def param_query_parser(params) do
-    Enum.reduce(params, "", fn({k,v}, acc) ->
+    clean_nils(params)
+    |> Enum.reduce("", fn({k,v}, acc) ->
       "#{acc}&#{Application.get_env(:teamplace, :query_prefix)}#{k}=#{v}"
     end)
+    |> URI.encode
+  end
+
+  defp clean_nils(map) do
+    for {k,v} <- map, not(is_nil(v)), into: %{}, do: {k,v}
   end
 end
