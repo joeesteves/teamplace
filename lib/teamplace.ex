@@ -14,10 +14,11 @@ defmodule Teamplace do
   def get_data(credentials, resource, action, params \\ nil) do
     case HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity) do
       #status_code is invalid token
-      %HTTPoison.Response{status_code: 406} ->
+      %HTTPoison.Response{status_code: 406, body: body} ->
         new_token(credentials)
         get_data(credentials, resource, action)
-
+      %HTTPoison.Response{body: ""} ->
+        []
       %HTTPoison.Response{body: body} ->
         Poison.decode!(body)
     end
