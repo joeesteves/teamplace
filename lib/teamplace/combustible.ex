@@ -5,8 +5,13 @@ defmodule Teamplace.Combustible do
 
   @decimals 3
 
-  def cargar(%Factura{} = factura, numero_comprobante, proveedor_codigo, cantidad, neto, exento) do
-    %{factura | NumeroComprobante: numero_comprobante, Proveedor: proveedor_codigo}
+  def cargar(numero_comprobante, proveedor_codigo, cantidad, neto, exento) do
+    %Factura{
+      IdentificacionExterna: uuid,
+      NumeroComprobante: numero_comprobante,
+      Proveedor: proveedor_codigo,
+      ImporteTotal: D.new(neto) |> D.mult(D.new(1.21)) |> D.add(D.new(exento))
+    }
     |> Factura.add_product(%Producto{
       Cantidad: D.new(cantidad),
       Precio: D.div(D.new(neto), D.new(cantidad))
@@ -21,23 +26,35 @@ defmodule Teamplace.Combustible do
       ConceptoImporte: D.new(exento),
       ConceptoImporteGravado: D.new(0)
     })
-    |> to_fixed([Productos: [:Cantidad, :Precio], Conceptos: [:ConceptoImporte, :ConceptoImporteGravado]])
+    |> to_fixed([
+      :ImporteTotal,
+      Productos: [:Cantidad, :Precio],
+      Conceptos: [:ConceptoImporte, :ConceptoImporteGravado]
+    ])
   end
 
-  def to_fixed(struct, [ {k, v} | tail]) do
+  def control(%Factura{} = factura, importe_control) do
+    %{factura | ImporteTotalControl: D.new(importe_control)}
+    |> to_fixed([:ImporteTotalControl])
+  end
+
+  defp to_fixed(struct, [{k, v} | tail]) do
     Map.update!(struct, k, fn k ->
-      Enum.map(k, &(to_fixed(&1, v)))
+      Enum.map(k, &to_fixed(&1, v))
     end)
     |> to_fixed(tail)
   end
 
-  def to_fixed(struct, [ k | tail]) do
-    Map.update!(struct, k, &(fix(&1)))
+  defp to_fixed(struct, [k | tail]) do
+    Map.update!(struct, k, &fix(&1))
     |> to_fixed(tail)
   end
 
-  def to_fixed(struct, []), do: struct
+  defp to_fixed(struct, []), do: struct
 
-  def fix(decimal), do: decimal |> D.to_float |> :erlang.float_to_binary([:compact, { :decimals, @decimals }])
+  defp fix(decimal),
+    do: decimal |> D.to_float() |> :erlang.float_to_binary([:compact, {:decimals, @decimals}])
 
+  defp uuid,
+    do: :rand.uniform() |> Float.to_string() |> String.replace(~r/0\./, "") |> String.slice(0..8)
 end

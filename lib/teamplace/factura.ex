@@ -1,18 +1,15 @@
 defmodule Teamplace.Factura.Producto.DimensionDistribucion do
-  defstruct [:dimensionCodigo, :distribucionCodigo]
+  defstruct dimensionCodigo: "DIMCTC", distribucionCodigo: "ADMIN"
 end
 
 defmodule Teamplace.Factura.Producto do
   alias Teamplace.Factura.Producto.DimensionDistribucion
 
-  defstruct ProductoCodigo: "",
+  defstruct ProductoCodigo: "GASOIL",
             Cantidad: "",
             Precio: "",
             DimensionDistribucion: [
-              %DimensionDistribucion{
-                dimensionCodigo: "DIMCTC",
-                distribucionCodigo: "ADMIN"
-              }
+              %DimensionDistribucion{}
             ]
 end
 
@@ -42,6 +39,7 @@ defmodule Teamplace.Factura do
             NumeroComprobante: "",
             MonedaCodigo: "PES",
             ComprobanteTipoImpositivoCodigo: "81",
+            ImporteTotal: "",
             ImporteTotalControl: "",
             Productos: [],
             Conceptos: []
