@@ -8,9 +8,16 @@ defmodule Teamplace.Factura.Producto do
   defstruct ProductoCodigo: "",
             Cantidad: "",
             Precio: "",
-            DimensionDistribucion: [%DimensionDistribucion{}]
+            DimensionDistribucion: [
+              %DimensionDistribucion{
+                dimensionCodigo: "DIMCTC",
+                distribucionCodigo: "ADMIN"
+              }
+            ]
 end
 
+# IMPINT -> Impuestos Internos
+# COMPRA_IVA_21 -> Iva 21%
 defmodule Teamplace.Factura.Concepto do
   defstruct ConceptoCodigo: "",
             ImporteEditable: "1",
@@ -24,11 +31,11 @@ defmodule Teamplace.Factura do
   alias Teamplace.Factura.{Producto, Concepto}
 
   defstruct IdentificacionExterna: "",
-            EmpresaCodigo: "",
-            Fecha: "",
-            FechaComprobante: "",
+            EmpresaCodigo: "INT",
+            Fecha: "#{Date.utc_today()}",
+            FechaComprobante: "#{Date.utc_today()}",
             Proveedor: "",
-            CondicionPagoCodigo: "",
+            CondicionPagoCodigo: "15",
             TransaccionTipoCodigo: "OPER",
             TransaccionSubtipoCodigo: "FC",
             WorkflowCodigo: "CPRA-SERCON",
@@ -36,10 +43,14 @@ defmodule Teamplace.Factura do
             MonedaCodigo: "PES",
             ComprobanteTipoImpositivoCodigo: "81",
             ImporteTotalControl: "",
-            Productos: [%Producto{}],
-            Conceptos: [%Concepto{}]
+            Productos: [],
+            Conceptos: []
 
   def add_product(%Factura{} = factura, %Producto{} = producto) do
-    Map.update!(factura, :Productos, &([producto | &1]))
+    Map.update!(factura, :Productos, &[producto | &1])
+  end
+
+  def add_concepto(%Factura{} = factura, %Concepto{} = concepto) do
+    Map.update!(factura, :Conceptos, &[concepto | &1])
   end
 end

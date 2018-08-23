@@ -9,6 +9,7 @@ defmodule Teamplace do
   Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
   and returns a response Map
   """
+
   @type credentials :: %{client_id: String.t, client_secret: String.t}
   @spec get_data(credentials, String.t, String.t, Map.t) :: Map.t
 
