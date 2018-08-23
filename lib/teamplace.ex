@@ -1,16 +1,17 @@
 defmodule Teamplace do
   @moduledoc """
-  Documentation for Teamplace Wrapper API.
+    Documentation for Teamplace Wrapper API.
   """
-  @type credentials :: %{client_id: String.t, client_secret: String.t}
 
   alias Teamplace.Helpers
+
   @doc """
-    Get Data
-
-
+  Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
+  and returns a response Map
   """
+  @type credentials :: %{client_id: String.t, client_secret: String.t}
   @spec get_data(credentials, String.t, String.t, Map.t) :: Map.t
+
   def get_data(credentials, resource, action, params \\ nil) do
     case HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity) do
       #status_code is invalid token
@@ -33,22 +34,26 @@ defmodule Teamplace do
     ...> |> String.match?(~r/[\\d, \\w]{41}/)
     true
   """
+
   def get_token(%{client_id: client_id} = credentials) do
     Agent.get(:teamplace, & &1[client_id]) || new_token(credentials)
   end
 
-  def post_data(end_point, data) do
+  def post_data(credentials, resource, action, data) do
     headers = [{"content-type", "application/json"}]
     error = {:error, "Hubo un error"}
 
-    case HTTPoison.post(end_point, data, headers) do
+    case HTTPoison.post(url_factory(credentials, resource, action), data, headers) do
+      %HTTPoison.Response{status_code: 406} ->
+        new_token(credentials)
+        post_data(credentials, resource, action, data)
       {:ok, %HTTPoison.Response{status_code: 200}} -> {:ok, "Registro Creado"}
       {:ok, _} -> error
       {:error, _} -> error
     end
   end
 
-  defp url_factory(credentials, resource, action, params) do
+  defp url_factory(credentials, resource, action, params \\ nil) do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
