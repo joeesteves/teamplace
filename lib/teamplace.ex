@@ -5,13 +5,6 @@ defmodule Teamplace do
 
   alias Teamplace.Helpers
 
-  @doc """
-  Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
-  and returns a response Map
-  """
-
-  @type credentials :: %{client_id: String.t(), client_secret: String.t()}
-  @spec get_data(credentials, String.t(), String.t(), Map.t()) :: Map.t()
   def test() do
     get_chunked(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
   end
@@ -26,48 +19,34 @@ defmodule Teamplace do
       )
 
     Stream.resource(
-      fn -> {"", []} end,
-      fn {remanent, acc} ->
+      fn -> "" end,
+      fn previus_chunk_remanent ->
         receive do
           %HTTPoison.AsyncChunk{chunk: chunk, id: ^ref} ->
-            IO.puts(String.duplicate("-", 60))
             capture = Regex.named_captures(~r/\[?(?<complete>.*})?(?<incomplete>.*)\]?/, chunk)
-            partial_content = remanent <> capture["complete"]
 
-            next =
-              if partial_content |> String.match?(~r/(?<=}),/) do
-                  partial_content |> String.split(~r/(?<=}),/)
-              end || []
+            partial_content = previus_chunk_remanent <> capture["complete"]
 
-            {next,
-             {((Enum.any?(next) && "" || partial_content) <> capture["incomplete"]) |> String.replace(~r/^,(?={)/, ""),
-              acc ++ next}}
+            next = extract_maps_if_any(partial_content)
+
+            {next, create_chunk_remanent(next, partial_content, capture["incomplete"])}
 
           %HTTPoison.AsyncEnd{id: ^ref} ->
-            {:halt, acc}
+            {:halt, ""}
         end
       end,
       fn _ -> nil end
     )
-    |> Stream.map(&Teamplace.db/1)
-    |> Stream.map(&Map.take(&1, ["DOCUMENTO"]))
+    |> Stream.map(&try_decode/1)
   end
 
-  def db(item) do
-    try do
-      Poison.decode!(item)
-    rescue
-      e ->
-        IO.puts("------------" <> item <> "---------------")
-        %{}
-    end
-  end
+  @doc """
+  Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
+  and returns a response Map
+  """
 
-  def print(item) do
-    IO.puts(String.duplicate("-", 60))
-    IO.puts(item)
-  end
-
+  @type credentials :: %{client_id: String.t(), client_secret: String.t()}
+  @spec get_data(credentials, String.t(), String.t(), Map.t()) :: Map.t()
   def get_data(credentials, resource, action, params \\ nil) do
     case HTTPoison.get!(
            url_factory(credentials, resource, action, params),
@@ -126,6 +105,56 @@ defmodule Teamplace do
       resource <>
       "/" <>
       action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helpers.param_query_parser(params)
+  end
+
+  defp create_chunk_remanent([], _partial_content, _incomplete), do: ""
+
+  defp create_chunk_remanent(_, partial_content, incomplete) do
+    (partial_content <> incomplete)
+    |> String.replace(~r/^,(?={)/, "")
+  end
+
+  defp extract_maps_if_any(partial_content) do
+    if partial_content |> String.match?(~r/(?<=}),/) do
+      partial_content |> String.split(~r/(?<=}),/)
+    else
+      []
+    end
+  end
+
+  defp db(item) do
+    try do
+      Poison.decode!(item)
+    rescue
+      e ->
+        IO.puts("------------" <> item <> "---------------")
+        %{}
+    end
+  end
+
+  defp create_chunk_remanent([], _partial_content, _incomplete), do: ""
+
+  defp create_chunk_remanent(_, partial_content, incomplete) do
+    (partial_content <> incomplete)
+    |> String.replace(~r/^,(?={)/, "")
+  end
+
+  defp extract_maps_if_any(partial_content) do
+    if partial_content |> String.match?(~r/(?<=}),/) do
+      partial_content |> String.split(~r/(?<=}),/)
+    else
+      []
+    end
+  end
+
+  defp try_decode(item) do
+    try do
+      Poison.decode!(item)
+    rescue
+      e ->
+        IO.puts("ERROR DECODING ITEM")
+        %{}
+    end
   end
 
   defp save_session(token, credentials) do
