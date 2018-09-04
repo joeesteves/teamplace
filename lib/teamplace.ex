@@ -12,6 +12,47 @@ defmodule Teamplace do
 
   @type credentials :: %{client_id: String.t, client_secret: String.t}
   @spec get_data(credentials, String.t, String.t, Map.t) :: Map.t
+  def test() do
+    get_chunked(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
+  end
+
+  def get_chunked(credentials, resource, action, params \\ nil) do
+    %HTTPoison.AsyncResponse{id: ref} = HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity, stream_to: self())
+
+    Stream.resource(
+      fn -> {"", []} end,
+      fn {remanent, acc} ->
+        receive do
+          %HTTPoison.AsyncChunk{chunk: chunk, id: ^ref} ->
+            capture = Regex.named_captures(~r/\[?(?<complete>{.*})?(?<incomplete>.*)\]?/, chunk)
+            partial_content = remanent <> capture["complete"]
+            next = if (partial_content |> String.match?(~r/(?<=}),/)) do
+              partial_content |> String.split(~r/(?<=}),/)
+            end || []
+            {next, {(partial_content <> capture["incomplete"]) |> String.replace(~r/^,(?={)/, ""), acc ++ next }}
+
+          %HTTPoison.AsyncEnd{id: ^ref  } ->
+            {:halt, acc }
+        end
+      end,
+      fn _ -> end
+      )
+  end
+
+  def db(item) do
+    try do
+      Poison.decode!(item)
+    rescue
+      e ->
+        IO.puts "------------" <> item <> "---------------"
+        %{}
+    end
+  end
+
+  def print(item) do
+    IO.puts String.duplicate("-",60)
+    IO.puts item
+  end
 
   def get_data(credentials, resource, action, params \\ nil) do
     case HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity) do
@@ -54,7 +95,7 @@ defmodule Teamplace do
     end
   end
 
-  defp url_factory(credentials, resource, action, params \\ nil) do
+  def url_factory(credentials, resource, action, params \\ nil) do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
