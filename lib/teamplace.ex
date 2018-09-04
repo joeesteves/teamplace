@@ -10,33 +10,47 @@ defmodule Teamplace do
   and returns a response Map
   """
 
-  @type credentials :: %{client_id: String.t, client_secret: String.t}
-  @spec get_data(credentials, String.t, String.t, Map.t) :: Map.t
+  @type credentials :: %{client_id: String.t(), client_secret: String.t()}
+  @spec get_data(credentials, String.t(), String.t(), Map.t()) :: Map.t()
   def test() do
     get_chunked(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
   end
 
   def get_chunked(credentials, resource, action, params \\ nil) do
-    %HTTPoison.AsyncResponse{id: ref} = HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity, stream_to: self())
+    %HTTPoison.AsyncResponse{id: ref} =
+      HTTPoison.get!(
+        url_factory(credentials, resource, action, params),
+        [],
+        recv_timeout: :infinity,
+        stream_to: self()
+      )
 
     Stream.resource(
       fn -> {"", []} end,
       fn {remanent, acc} ->
         receive do
           %HTTPoison.AsyncChunk{chunk: chunk, id: ^ref} ->
-            capture = Regex.named_captures(~r/\[?(?<complete>{.*})?(?<incomplete>.*)\]?/, chunk)
+            IO.puts(String.duplicate("-", 60))
+            capture = Regex.named_captures(~r/\[?(?<complete>.*})?(?<incomplete>.*)\]?/, chunk)
             partial_content = remanent <> capture["complete"]
-            next = if (partial_content |> String.match?(~r/(?<=}),/)) do
-              partial_content |> String.split(~r/(?<=}),/)
-            end || []
-            {next, {(partial_content <> capture["incomplete"]) |> String.replace(~r/^,(?={)/, ""), acc ++ next }}
 
-          %HTTPoison.AsyncEnd{id: ^ref  } ->
-            {:halt, acc }
+            next =
+              if partial_content |> String.match?(~r/(?<=}),/) do
+                  partial_content |> String.split(~r/(?<=}),/)
+              end || []
+
+            {next,
+             {((Enum.any?(next) && "" || partial_content) <> capture["incomplete"]) |> String.replace(~r/^,(?={)/, ""),
+              acc ++ next}}
+
+          %HTTPoison.AsyncEnd{id: ^ref} ->
+            {:halt, acc}
         end
       end,
-      fn _ -> end
-      )
+      fn _ -> nil end
+    )
+    |> Stream.map(&Teamplace.db/1)
+    |> Stream.map(&Map.take(&1, ["DOCUMENTO"]))
   end
 
   def db(item) do
@@ -44,24 +58,30 @@ defmodule Teamplace do
       Poison.decode!(item)
     rescue
       e ->
-        IO.puts "------------" <> item <> "---------------"
+        IO.puts("------------" <> item <> "---------------")
         %{}
     end
   end
 
   def print(item) do
-    IO.puts String.duplicate("-",60)
-    IO.puts item
+    IO.puts(String.duplicate("-", 60))
+    IO.puts(item)
   end
 
   def get_data(credentials, resource, action, params \\ nil) do
-    case HTTPoison.get!(url_factory(credentials, resource, action, params), [], recv_timeout: :infinity) do
-      #status_code is invalid token
+    case HTTPoison.get!(
+           url_factory(credentials, resource, action, params),
+           [],
+           recv_timeout: :infinity
+         ) do
+      # status_code is invalid token
       %HTTPoison.Response{status_code: 406, body: body} ->
         new_token(credentials)
         get_data(credentials, resource, action)
+
       %HTTPoison.Response{body: ""} ->
         []
+
       %HTTPoison.Response{body: body} ->
         Poison.decode!(body)
     end
@@ -89,9 +109,15 @@ defmodule Teamplace do
       %HTTPoison.Response{status_code: 406} ->
         new_token(credentials)
         post_data(credentials, resource, action, data)
-      {:ok, %HTTPoison.Response{status_code: 200}} -> {:ok, "Registro Creado"}
-      {:ok, _} -> error
-      {:error, _} -> error
+
+      {:ok, %HTTPoison.Response{status_code: 200}} ->
+        {:ok, "Registro Creado"}
+
+      {:ok, _} ->
+        error
+
+      {:error, _} ->
+        error
     end
   end
 
@@ -99,10 +125,7 @@ defmodule Teamplace do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
-      action <>
-      "?ACCESS_TOKEN=" <>
-      get_token(credentials) <>
-      Helpers.param_query_parser(params)
+      action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helpers.param_query_parser(params)
   end
 
   defp save_session(token, credentials) do
