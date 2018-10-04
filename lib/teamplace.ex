@@ -1,3 +1,4 @@
+require IEx
 defmodule Teamplace do
   @moduledoc """
     Documentation for Teamplace Wrapper API.
@@ -7,32 +8,77 @@ defmodule Teamplace do
 
   def test() do
     get_chunked(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
+    |> Enum.take(100)
+    |> Enum.map(fn j -> j["TIPO"] end)
+
+  end
+
+  def test_bench() do
+    get_data(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
+    |> Enum.take(100)
+    |> Enum.map(fn j -> j["TIPO"] end)
+    # |> Enum.with_index
+    # |> Enum.map(fn {j, idx} -> IO.puts idx end)
+  end
+
+  def buffer({data, _ } = acc \\ {[], :stream}, remanent \\ "") do
+    receive do
+      %HTTPoison.AsyncChunk{chunk: chunk} ->
+        capture = Regex.named_captures(~r/\[?(?<complete>.*})?(?<incomplete>.*)\]?/, chunk)
+        partial_content = remanent <> capture["complete"]
+        next = extract_maps_if_any(partial_content)
+        buffer({data ++ next, :stream}, create_chunk_remanent(next, partial_content, capture["incomplete"]))
+      %HTTPoison.AsyncEnd{} ->
+        buffer({data, :end})
+      %HTTPoison.AsyncStatus{code: 200} ->
+        buffer({data, :stream})
+      %HTTPoison.AsyncHeaders{} ->
+        buffer({data, :stream})
+      {:deliver, request_pid} ->
+        case acc do
+          {[], :end} ->
+            send(request_pid, {:end})
+          {[], :stream} ->
+            send(request_pid, {:wait})
+            buffer({[], :stream}, remanent)
+          {[head | tail], :end} ->
+            send(request_pid, {:response, head})
+            buffer({tail, :end})
+          {[head | tail], :stream} ->
+            send(request_pid, {:response, head})
+            buffer({tail, :stream}, remanent)
+        end
+      _ ->
+        buffer({data, :stream}, remanent)
+    end
   end
 
   def get_chunked(credentials, resource, action, params \\ nil) do
+    buffer_pid = spawn(fn -> buffer() end)
+    IO.puts( String.duplicate("*", 60))
     %HTTPoison.AsyncResponse{id: ref} =
       HTTPoison.get!(
         url_factory(credentials, resource, action, params),
         [],
         recv_timeout: :infinity,
-        stream_to: self()
+        stream_to: buffer_pid
       )
 
     Stream.resource(
-      fn -> "" end,
-      fn previus_chunk_remanent ->
+      fn ->
+        nil
+      end,
+      fn  _acc ->
+        send(buffer_pid, {:deliver, self()})
         receive do
-          %HTTPoison.AsyncChunk{chunk: chunk, id: ^ref} ->
-            capture = Regex.named_captures(~r/\[?(?<complete>.*})?(?<incomplete>.*)\]?/, chunk)
-
-            partial_content = previus_chunk_remanent <> capture["complete"]
-
-            next = extract_maps_if_any(partial_content)
-
-            {next, create_chunk_remanent(next, partial_content, capture["incomplete"])}
-
-          %HTTPoison.AsyncEnd{id: ^ref} ->
-            {:halt, ""}
+          {:response, item} ->
+            {[item], nil}
+          {:wait} ->
+            IO.puts("sleeping")
+            :timer.sleep(500)
+            {[], nil}
+          {:end} ->
+            {:halt, nil}
         end
       end,
       fn _ -> nil end
@@ -107,10 +153,13 @@ defmodule Teamplace do
       action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helpers.param_query_parser(params)
   end
 
-  defp create_chunk_remanent([], _partial_content, _incomplete), do: ""
+  defp create_chunk_remanent([], partial_content, incomplete) do
+    partial_content <> incomplete
+    |> String.replace(~r/^,(?={)/, "")
+  end
 
   defp create_chunk_remanent(_, partial_content, incomplete) do
-    (partial_content <> incomplete)
+    incomplete
     |> String.replace(~r/^,(?={)/, "")
   end
 
@@ -132,12 +181,13 @@ defmodule Teamplace do
     end
   end
 
-  defp create_chunk_remanent([], _partial_content, _incomplete), do: ""
-
-  defp create_chunk_remanent(_, partial_content, incomplete) do
+  defp create_chunk_remanent([] , partial_content, incomplete) do
     (partial_content <> incomplete)
-    |> String.replace(~r/^,(?={)/, "")
+    # |> String.replace(~r/^,(?={)/, "")
   end
+
+  defp create_chunk_remanent(_, _partial_content, incomplete), do: incomplete
+
 
   defp extract_maps_if_any(partial_content) do
     if partial_content |> String.match?(~r/(?<=}),/) do
