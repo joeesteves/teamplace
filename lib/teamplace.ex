@@ -1,4 +1,3 @@
-require IEx
 defmodule Teamplace do
   @moduledoc """
     Documentation for Teamplace Wrapper API.
@@ -6,77 +5,88 @@ defmodule Teamplace do
 
   alias Teamplace.Helpers
 
+  def get_stream(credentials, resource, action, params \\ nil) do
+    # Starts buffer
+    buffer_pid = spawn(fn -> buffer() end)
+
+    # Request JSON Chunked Data
+    HTTPoison.get!(
+      url_factory(credentials, resource, action, params),
+      [],
+      recv_timeout: :infinity,
+      stream_to: buffer_pid
+    )
+
+    # Returns Stream
+    create_stream(buffer_pid)
+  end
+
   def test() do
-    get_chunked(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
-    |> Enum.take(100)
-    |> Enum.map(fn j -> j["TIPO"] end)
-
+    get_stream(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
   end
 
-  def test_bench() do
-    get_data(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
-    |> Enum.take(100)
-    |> Enum.map(fn j -> j["TIPO"] end)
-    # |> Enum.with_index
-    # |> Enum.map(fn {j, idx} -> IO.puts idx end)
-  end
-
-  def buffer({data, _ } = acc \\ {[], :stream}, remanent \\ "") do
+  defp buffer({data, _status} = acc \\ {[], :stream}, remanent \\ "") do
     receive do
+      %HTTPoison.AsyncStatus{code: 200} ->
+        buffer({data, :stream})
+
+      %HTTPoison.AsyncHeaders{} ->
+        buffer({data, :stream})
+
       %HTTPoison.AsyncChunk{chunk: chunk} ->
         capture = Regex.named_captures(~r/\[?(?<complete>.*})?(?<incomplete>.*)\]?/, chunk)
         partial_content = remanent <> capture["complete"]
         next = extract_maps_if_any(partial_content)
-        buffer({data ++ next, :stream}, create_chunk_remanent(next, partial_content, capture["incomplete"]))
+
+        buffer(
+          {data ++ next, :stream},
+          create_chunk_remanent(next, partial_content, capture["incomplete"])
+        )
+
       %HTTPoison.AsyncEnd{} ->
         buffer({data, :end})
-      %HTTPoison.AsyncStatus{code: 200} ->
-        buffer({data, :stream})
-      %HTTPoison.AsyncHeaders{} ->
-        buffer({data, :stream})
+
+
       {:deliver, request_pid} ->
         case acc do
           {[], :end} ->
             send(request_pid, {:end})
+
           {[], :stream} ->
             send(request_pid, {:wait})
             buffer({[], :stream}, remanent)
+
           {[head | tail], :end} ->
             send(request_pid, {:response, head})
             buffer({tail, :end})
+
           {[head | tail], :stream} ->
             send(request_pid, {:response, head})
             buffer({tail, :stream}, remanent)
         end
+
       _ ->
         buffer({data, :stream}, remanent)
     end
   end
 
-  def get_chunked(credentials, resource, action, params \\ nil) do
-    buffer_pid = spawn(fn -> buffer() end)
-    IO.puts( String.duplicate("*", 60))
-    %HTTPoison.AsyncResponse{id: ref} =
-      HTTPoison.get!(
-        url_factory(credentials, resource, action, params),
-        [],
-        recv_timeout: :infinity,
-        stream_to: buffer_pid
-      )
-
+  defp create_stream(buffer_pid) do
     Stream.resource(
       fn ->
         nil
       end,
-      fn  _acc ->
+      fn _acc ->
         send(buffer_pid, {:deliver, self()})
+
         receive do
           {:response, item} ->
             {[item], nil}
+
           {:wait} ->
             IO.puts("sleeping")
             :timer.sleep(500)
             {[], nil}
+
           {:end} ->
             {:halt, nil}
         end
@@ -90,7 +100,6 @@ defmodule Teamplace do
   Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
   and returns a response Map
   """
-
   @type credentials :: %{client_id: String.t(), client_secret: String.t()}
   @spec get_data(credentials, String.t(), String.t(), Map.t()) :: Map.t()
   def get_data(credentials, resource, action, params \\ nil) do
@@ -154,7 +163,7 @@ defmodule Teamplace do
   end
 
   defp create_chunk_remanent([], partial_content, incomplete) do
-    partial_content <> incomplete
+    (partial_content <> incomplete)
     |> String.replace(~r/^,(?={)/, "")
   end
 
@@ -181,13 +190,12 @@ defmodule Teamplace do
     end
   end
 
-  defp create_chunk_remanent([] , partial_content, incomplete) do
-    (partial_content <> incomplete)
+  defp create_chunk_remanent([], partial_content, incomplete) do
+    partial_content <> incomplete
     # |> String.replace(~r/^,(?={)/, "")
   end
 
   defp create_chunk_remanent(_, _partial_content, incomplete), do: incomplete
-
 
   defp extract_maps_if_any(partial_content) do
     if partial_content |> String.match?(~r/(?<=}),/) do
