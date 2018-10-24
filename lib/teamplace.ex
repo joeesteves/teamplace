@@ -221,10 +221,15 @@ defmodule Teamplace do
   end
 
   defp new_token(credentials) do
-    auth_url(credentials)
-    |> HTTPoison.get!()
-    |> Map.get(:body)
-    |> save_session(credentials)
+    case auth_url(credentials)
+    |> HTTPoison.get!() do
+      %HTTPoison.Response{status_code: 406} ->
+        raise ArgumentError, message: "check client_id or client_secret"
+      response ->
+        response
+        |> Map.get(:body)
+        |> save_session(credentials)
+      end
   end
 
   defp auth_url(%{client_id: client_id, client_secret: client_secret}) do
