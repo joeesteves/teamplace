@@ -135,14 +135,14 @@ defmodule Teamplace do
     Agent.get(:teamplace, & &1[client_id]) || new_token(credentials)
   end
 
-  def post_data(credentials, resource, action, data) do
+  def post_data(credentials, resource, data) do
     headers = [{"content-type", "application/json"}]
     error = {:error, "Hubo un error"}
 
-    case HTTPoison.post(url_factory(credentials, resource, action), data, headers) do
+    case HTTPoison.post(url_factory(credentials, resource), data, headers) do
       %HTTPoison.Response{status_code: 406} ->
         new_token(credentials)
-        post_data(credentials, resource, action, data)
+        post_data(credentials, resource, data)
 
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
@@ -153,6 +153,12 @@ defmodule Teamplace do
       {:error, _} ->
         error
     end
+  end
+
+  def url_factory(credentials, resource) do
+    Application.get_env(:teamplace, :api_base) <>
+      resource <>
+      "?ACCESS_TOKEN=" <> get_token(credentials)
   end
 
   def url_factory(credentials, resource, action, params \\ nil) do
