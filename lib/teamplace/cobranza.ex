@@ -1,3 +1,25 @@
+defmodule Teamplace.Cobranza.Banco do
+  defstruct OperacionBancariaCodigo: "",
+  OperacionBancariaCodigo: "",
+  CuentaCodigo: "",
+  DebeHaber: "1" # 1 Debe, -1 Haber
+  ImporteMonTransaccion: "",
+  MonedaCodigo: "PES",
+  Descripcion: ""
+end
+
+defmodule Teamplace.Cobranza.CtaCte do
+  defstruct CuentaCodigo: "",
+    DebeHaber: "",
+    ImporteMonTransaccion: ""
+    ImporteMonPrincipal: ""
+    MonedaCodigo: ""
+    Descripcion: ""
+
+
+    # "AplicacionOrigen": "Tipo: String, Obligatorio: No, Descripción: Identificacion Externa de la transaccion origen a aplicar",
+end
+
 defmodule Teamplace.Cobranza do
   defstruct IdentificacionExterna: "",
     EmpresaCodigo: "",
@@ -8,23 +30,21 @@ defmodule Teamplace.Cobranza do
     DiferenciaCambio: "1",
     UsaCotizacionOrigen: "1",
     Descripcion: ""
-end
-defmodule Teamplace.Cobranza.Banco do
-  defstruct OperacionBancariaCodigo: "",
-    OperacionBancariaCodigo: "",
-    CuentaCodigo: "",
-    DebeHaber: "1" # 1 Debe, -1 Haber
-    ImporteMonTransaccion: "",
-    MonedaCodigo: "PES",
-    Descripcion: ""
-end
+
+  def add_bank(%Cobranza{} = cobranza, %Banco{} = banco) do
+    Map.update!(cobranza, :Banco, &[banco | &1])
+  end
+
+  def add_cta_cte(%Cobranza{} = cobranza, %CtaCte{} = cta_cte) do
+    Map.update!(cobranza, :CtaCte, &[cta_cte | &1])
+  end
 
 
-    {
-      "IdentificacionExterna": "Tipo: String, Obligatorio: No, Descripción: Identificación externa",
-      "EmpresaCodigo": "Tipo: String, Obligatorio: Si, Consulte la API /Empresa/list",
-      "NumeroComprobante": "Tipo: String, Obligatorio: No, Descripción: Numero de documento",
-      "Proveedor": "Tipo: String, Obligatorio: Si, Consulte la API /Proveedor/list",
+{
+  "IdentificacionExterna": "Tipo: String, Obligatorio: No, Descripción: Identificación externa",
+  "EmpresaCodigo": "Tipo: String, Obligatorio: Si, Consulte la API /Empresa/list",
+  "NumeroComprobante": "Tipo: String, Obligatorio: No, Descripción: Numero de documento",
+  "Proveedor": "Tipo: String, Obligatorio: Si, Consulte la API /Proveedor/list",
       "TransaccionTipoCodigo": "Tipo: String, Obligatorio: Sí, Valor a completar: OPERTESORERIA ",
       "TransaccionSubtipoCodigo": "Tipo: String, Obligatorio: Sí, Consulte la API /TransaccionSubtipo/list",
       "Fecha": "Tipo: Date, Obligatorio: Si, Descripción: aaaa-mm-dd",
