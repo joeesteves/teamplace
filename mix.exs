@@ -19,7 +19,10 @@ defmodule Teamplace.MixProject do
     [
       extra_applications: [:logger],
       mod: {Teamplace.Application, []},
-      env: [api_base: "https://3.teamplace.finneg.com/BSA/api/", query_prefix: "PARAMWEBREPORT_"]
+      env: [
+        api_base: "https://3.teamplace.finneg.com/BSA/api/",
+        query_prefix: "PARAMWEBREPORT_"
+      ]
     ]
   end
 
