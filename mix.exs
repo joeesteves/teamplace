@@ -4,13 +4,12 @@ defmodule Teamplace.MixProject do
   def project do
     [
       app: :teamplace,
-      version: "0.2.1",
+      version: "0.3.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "Teamplace API Wrapper",
       source_url: "https://github.com/ponyesteves/teamplace"
-
     ]
   end
 
