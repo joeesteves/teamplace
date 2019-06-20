@@ -22,6 +22,7 @@ defmodule Teamplace.MixProject do
       env: [
         api_base: System.get_env("TEAMPLACE_API_BASE"),
         query_prefix: "PARAMWEBREPORT_",
+        bcra_token: System.get_env("TEAMPLACE_BCRA_TOKEN"),
         credentials: %{
           client_id: System.get_env("TEAMPLACE_CLIENT_ID"),
           client_secret: System.get_env("TEAMPLACE_CLIENT_SECRET")

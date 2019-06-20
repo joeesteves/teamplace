@@ -38,10 +38,7 @@ defmodule Teamplace.Cobranza do
             Descripcion: "",
             Banco: [],
             CtaCte: [],
-            Cotizaciones: [
-              %Cotizacion{MonedaCodigo: "PES", Cotizacion: "1"},
-              %Cotizacion{MonedaCodigo: "DOL", Cotizacion: "45"}
-            ]
+            Cotizaciones: [%Cotizacion{MonedaCodigo: "PES", Cotizacion: "1"}]
 
   def add_bank(%Cobranza{} = cobranza, %Banco{} = banco) do
     Map.update!(cobranza, :Banco, &[banco | &1])
@@ -49,6 +46,18 @@ defmodule Teamplace.Cobranza do
 
   def add_cta_cte(%Cobranza{} = cobranza, %CtaCte{} = cta_cte) do
     Map.update!(cobranza, :CtaCte, &[cta_cte | &1])
+  end
+
+  def add_dolar_price(%Cobranza{} = cobranza) do
+    Map.update!(cobranza, :Cotizaciones, fn cot ->
+      [
+        %Cotizacion{
+          MonedaCodigo: "DOL",
+          Cotizacion: Teamplace.Helpers.bcra_dolar_price()
+        }
+        | cot
+      ]
+    end)
   end
 end
 

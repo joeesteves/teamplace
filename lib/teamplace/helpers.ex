@@ -33,6 +33,28 @@ defmodule Teamplace.Helpers do
     |> String.slice(0..8)
   end
 
+  def bcra_dolar_price do
+    token = Application.get_env(:teamplace, :bcra_token) || ""
+
+    response =
+      HTTPoison.get(
+        "https://api.estadisticasbcra.com/usd",
+        Authorization: "Bearer #{token}"
+      )
+
+    case response do
+      {:ok, %HTTPoison.Response{body: body, status_code: 200}} ->
+        %{"v" => cot} = body |> Poison.decode!() |> List.last()
+        cot
+
+      _ ->
+        bcra_fallback_dolar_price()
+    end
+  end
+
+  # TODO: implement agent that holds last valid price and use that
+  defp bcra_fallback_dolar_price, do: "50"
+
   defp clean_nils(map) do
     for {k, v} <- map, not is_nil(v), into: %{}, do: {k, v}
   end
