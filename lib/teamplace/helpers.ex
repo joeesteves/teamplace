@@ -15,17 +15,25 @@ defmodule Teamplace.Helpers do
     ""
 
   """
-  @spec param_query_parser(Map.t) :: String.t
+  @spec param_query_parser(Map.t()) :: String.t()
   def param_query_parser(nil), do: ""
+
   def param_query_parser(params) do
     clean_nils(params)
-    |> Enum.reduce("", fn({k,v}, acc) ->
+    |> Enum.reduce("", fn {k, v}, acc ->
       "#{acc}&#{Application.get_env(:teamplace, :query_prefix)}#{k}=#{v}"
     end)
-    |> URI.encode
+    |> URI.encode()
+  end
+
+  def uuid do
+    :rand.uniform()
+    |> Float.to_string()
+    |> String.replace(~r/0\./, "")
+    |> String.slice(0..8)
   end
 
   defp clean_nils(map) do
-    for {k,v} <- map, not(is_nil(v)), into: %{}, do: {k,v}
+    for {k, v} <- map, not is_nil(v), into: %{}, do: {k, v}
   end
 end

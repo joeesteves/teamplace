@@ -75,7 +75,8 @@ defmodule Teamplace do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
 
-      {:ok, _} ->
+      {:ok, e} ->
+        IO.inspect e
         error
 
       {:error, _} ->

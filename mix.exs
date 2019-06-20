@@ -20,8 +20,12 @@ defmodule Teamplace.MixProject do
       extra_applications: [:logger],
       mod: {Teamplace.Application, []},
       env: [
-        api_base: "https://3.teamplace.finneg.com/BSA/api/",
-        query_prefix: "PARAMWEBREPORT_"
+        api_base: System.get_env("TEAMPLACE_API_BASE"),
+        query_prefix: "PARAMWEBREPORT_",
+        credentials: %{
+          client_id: System.get_env("TEAMPLACE_CLIENT_ID"),
+          client_secret: System.get_env("TEAMPLACE_CLIENT_SECRET")
+        }
       ]
     ]
   end
