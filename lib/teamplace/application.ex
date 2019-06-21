@@ -7,7 +7,7 @@ defmodule Teamplace.Application do
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    ensure_required_envs() && IO.puts "Teampalce - All envs are correctly setted ✔"
+    ensure_required_envs() && IO.puts "Teamplace - All envs are correctly setted ✔"
 
     children = [
       # Starts a worker by calling: Teamplace.Worker.start_link(arg)
