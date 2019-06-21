@@ -4,7 +4,6 @@ defmodule TeamplaceTest do
   doctest Teamplace.Helper
 
   alias Teamplace.Factura
-  alias Teamplace.Factura.{Producto, Concepto}
 
   @tag :factura
   describe "factura" do
