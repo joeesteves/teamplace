@@ -219,8 +219,6 @@ defmodule Teamplace do
   end
 
   defp auth_url(%{client_id: client_id, client_secret: client_secret}) do
-    IO.puts(Application.get_env(:teamplace, :api_base))
-
     Application.get_env(:teamplace, :api_base) <>
       "oauth/token?grant_type=client_credentials&client_id=#{client_id}&client_secret=#{
         client_secret
