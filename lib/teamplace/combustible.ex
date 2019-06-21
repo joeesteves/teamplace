@@ -1,14 +1,14 @@
 defmodule Teamplace.Combustible do
   alias Teamplace.Factura
   alias Teamplace.Factura.{Producto, Concepto}
-  alias Teamplace.Helpers
+  alias Teamplace.Helper
   alias Decimal, as: D
 
   @decimals 3
 
   def cargar(numero_comprobante, proveedor_codigo, cantidad, neto, exento) do
     %Factura{
-      IdentificacionExterna: Helpers.uuid(),
+      IdentificacionExterna: Helper.uuid(),
       NumeroComprobante: numero_comprobante,
       Proveedor: proveedor_codigo,
       ImporteTotal: D.new(neto) |> D.mult(D.new(1.21)) |> D.add(D.new(exento))

@@ -3,7 +3,7 @@ defmodule Teamplace do
     Documentation for Teamplace Wrapper API.
   """
 
-  alias Teamplace.Helpers
+  alias Teamplace.Helper
 
   @doc """
   Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
@@ -94,7 +94,7 @@ defmodule Teamplace do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
-      action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helpers.param_query_parser(params)
+      action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helper.param_query_parser(params)
   end
 
   defp buffer({data, _status} = acc \\ {[], :stream}, remanent \\ "") do

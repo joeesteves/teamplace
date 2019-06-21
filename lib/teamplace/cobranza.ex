@@ -27,7 +27,7 @@ defmodule Teamplace.Cobranza do
   alias Teamplace.Cobranza
   alias Teamplace.Cobranza.{Banco, CtaCte, Cotizacion}
 
-  defstruct IdentificacionExterna: Teamplace.Helpers.uuid(),
+  defstruct IdentificacionExterna: Teamplace.Helper.uuid(),
             EmpresaCodigo: "PRUEBA39",
             Proveedor: "0292",
             TransaccionTipoCodigo: "OPERTESORERIA",
@@ -53,7 +53,7 @@ defmodule Teamplace.Cobranza do
       [
         %Cotizacion{
           MonedaCodigo: "DOL",
-          Cotizacion: Teamplace.Helpers.bcra_dolar_price()
+          Cotizacion: Teamplace.Helper.bcra_dolar_price()
         }
         | cot
       ]

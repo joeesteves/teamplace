@@ -1,7 +1,7 @@
 defmodule TeamplaceTest do
   use ExUnit.Case
   doctest Teamplace
-  doctest Teamplace.Helpers
+  doctest Teamplace.Helper
 
   alias Teamplace.Factura
   alias Teamplace.Factura.{Producto, Concepto}

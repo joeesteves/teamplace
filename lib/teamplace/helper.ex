@@ -1,4 +1,4 @@
-defmodule Teamplace.Helpers do
+defmodule Teamplace.Helper do
   @moduledoc """
     Templace helper functions
   """
@@ -8,10 +8,10 @@ defmodule Teamplace.Helpers do
 
   ## Example
 
-    iex> Teamplace.Helpers.param_query_parser(%{TipoCheque: 0})
+    iex> Teamplace.Helper.param_query_parser(%{TipoCheque: 0})
     "&PARAMWEBREPORT_TipoCheque=0"
 
-    iex> Teamplace.Helpers.param_query_parser(nil)
+    iex> Teamplace.Helper.param_query_parser(nil)
     ""
 
   """
