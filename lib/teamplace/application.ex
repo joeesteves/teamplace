@@ -7,7 +7,7 @@ defmodule Teamplace.Application do
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    ensure_required_envs() && IO.puts "Teamplace - All envs are correctly setted ✔"
+    ensure_required_envs() && IO.puts("Teamplace - All envs are correctly setted ✔")
 
     children = [
       # Starts a worker by calling: Teamplace.Worker.start_link(arg)
@@ -24,9 +24,13 @@ defmodule Teamplace.Application do
   defp ensure_required_envs do
     credentials = Application.get_env(:teamplace, :credentials)
     api_base = Application.get_env(:teamplace, :api_base)
-    credentials[:client_id] || raise "Missing TEAMPLACE_CLIENT_ID System Variable"
-    credentials[:client_secret] || raise "Missing TEAMPLACE_CLIENT_SECRET System Variable"
-    api_base || raise "Missing TEAMPLACE_API_BASE System Variable"
+    bcra_token = Application.get_env(:teamplace, :bcra_token)
+    suggestion = ". Please set them on config.exs and try again"
+
+    credentials[:client_id] || raise "Missing :teamplace, crendetials[:client_id]  env" <> suggestion
+    credentials[:client_secret] || raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
+    api_base || raise "Missing :teamplace, api_base env" <> suggestion
+    bcra_token || raise "Missing :teamplace, bsra_token env" <> suggestion
     true
   end
 end
