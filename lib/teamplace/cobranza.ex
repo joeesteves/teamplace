@@ -39,8 +39,8 @@ defmodule Teamplace.Cobranza do
   alias Teamplace.Cobranza.{Banco, Otros, CtaCte, Cotizacion}
 
   defstruct IdentificacionExterna: Teamplace.Helper.uuid(),
-            EmpresaCodigo: "PRUEBA39",
-            Proveedor: "0292",
+            EmpresaCodigo: "",
+            Proveedor: "",
             TransaccionTipoCodigo: "OPERTESORERIA",
             TransaccionSubtipoCodigo: "COBRANZA",
             Fecha: "#{Date.utc_today()}",
@@ -52,11 +52,11 @@ defmodule Teamplace.Cobranza do
             CtaCte: [],
             Cotizaciones: [%Cotizacion{MonedaCodigo: "PES", Cotizacion: "1"}]
 
-  def add_bank(%Cobranza{} = cobranza, %Banco{} = banco) do
+  def add_banco(%Cobranza{} = cobranza, %Banco{} = banco) do
     Map.update!(cobranza, :Banco, &[banco | &1])
   end
 
-  def add_others(%Cobranza{} = cobranza, %Otros{} = otros) do
+  def add_otros(%Cobranza{} = cobranza, %Otros{} = otros) do
     Map.update!(cobranza, :Otros, &[otros | &1])
   end
 
