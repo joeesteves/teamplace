@@ -27,7 +27,7 @@ defmodule Teamplace.Application do
     bcra_token = Application.get_env(:teamplace, :bcra_token)
     suggestion = ". Please set them on config.exs and try again"
 
-    credentials[:client_id] || raise "Missing :teamplace, crendetials[:client_id]  env" <> suggestion
+    credentials[:client_id] || raise "Missing :teamplace, credentials[:client_id]  env" <> suggestion
     credentials[:client_secret] || raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
     api_base || raise "Missing :teamplace, api_base env" <> suggestion
     bcra_token || raise "Missing :teamplace, bsra_token env" <> suggestion
