@@ -2,7 +2,15 @@ defmodule Teamplace.Cobranza.Banco do
   defstruct OperacionBancariaCodigo: "DEPOSEFECT",
             CuentaCodigo: "MERCADO_PAGO",
             DebeHaber: "1",
-            ImporteMonTransaccion: "100",
+            ImporteMonTransaccion: "95",
+            MonedaCodigo: "PES",
+            Descripcion: ""
+end
+
+defmodule Teamplace.Cobranza.Otros do
+  defstruct CuentaCodigo: "GASBAN",
+            DebeHaber: "1",
+            ImporteMonTransaccion: "5",
             MonedaCodigo: "PES",
             Descripcion: ""
 end
@@ -25,7 +33,7 @@ end
 
 defmodule Teamplace.Cobranza do
   alias Teamplace.Cobranza
-  alias Teamplace.Cobranza.{Banco, CtaCte, Cotizacion}
+  alias Teamplace.Cobranza.{Banco, Otros, CtaCte, Cotizacion}
 
   defstruct IdentificacionExterna: Teamplace.Helper.uuid(),
             EmpresaCodigo: "PRUEBA39",
@@ -37,11 +45,16 @@ defmodule Teamplace.Cobranza do
             UsaCotizacionOrigen: "1",
             Descripcion: "",
             Banco: [],
+            Otros: [],
             CtaCte: [],
             Cotizaciones: [%Cotizacion{MonedaCodigo: "PES", Cotizacion: "1"}]
 
   def add_bank(%Cobranza{} = cobranza, %Banco{} = banco) do
     Map.update!(cobranza, :Banco, &[banco | &1])
+  end
+
+  def add_others(%Cobranza{} = cobranza, %Otros{} = otros) do
+    Map.update!(cobranza, :Otros, &[otros | &1])
   end
 
   def add_cta_cte(%Cobranza{} = cobranza, %CtaCte{} = cta_cte) do
