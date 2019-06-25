@@ -3,7 +3,7 @@ defmodule Teamplace do
     Documentation for Teamplace Wrapper API.
   """
 
-  alias Teamplace.Helpers
+  alias Teamplace.Helper
 
   @doc """
   Get Data, receives credentials type, resource (i.e. "reportes" || "facturaCompras"), action (i.e. "list")
@@ -18,7 +18,7 @@ defmodule Teamplace do
            recv_timeout: :infinity
          ) do
       # status_code if invalid token
-      %HTTPoison.Response{status_code: 406, body: body} ->
+      %HTTPoison.Response{status_code: 406, body: _body} ->
         new_token(credentials)
         get_data(credentials, resource, action)
 
@@ -30,6 +30,9 @@ defmodule Teamplace do
     end
   end
 
+  @doc """
+  get_stream(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
+  """
   def get_stream(credentials, resource, action, params \\ nil) do
     # Starts buffer
     buffer_pid = spawn(fn -> buffer() end)
@@ -46,23 +49,16 @@ defmodule Teamplace do
     create_stream(buffer_pid)
   end
 
-  def test() do
-    get_stream(Mate.Accounts.get_user!(1).credentials, "reports", "saldosprov")
-  end
-
   @doc """
   Get's actual token is exists or generates new one
-
-  ## Examples
-
-    iex> Teamplace.get_token(%{client_id: System.get_env("TEAMPLACE_CLIENT_ID"), client_secret: System.get_env("TEAMPLACE_CLIENT_SECRET")})
-    ...> |> String.match?(~r/[\\d, \\w]{41}/)
-    true
   """
   def get_token(%{client_id: client_id} = credentials) do
     Agent.get(:teamplace, & &1[client_id]) || new_token(credentials)
   end
 
+  @doc """
+    Posts json data to teamplace resource
+  """
   def post_data(credentials, resource, data) do
     headers = [{"content-type", "application/json"}]
     error = {:error, "Hubo un error"}
@@ -75,11 +71,8 @@ defmodule Teamplace do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
 
-      {:ok, _} ->
-        error
-
-      {:error, _} ->
-        error
+      {_, e} ->
+        {:error, e}
     end
   end
 
@@ -93,7 +86,7 @@ defmodule Teamplace do
     Application.get_env(:teamplace, :api_base) <>
       resource <>
       "/" <>
-      action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helpers.param_query_parser(params)
+      action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helper.param_query_parser(params)
   end
 
   defp buffer({data, _status} = acc \\ {[], :stream}, remanent \\ "") do
@@ -171,7 +164,7 @@ defmodule Teamplace do
     |> String.replace(~r/^,(?={)/, "")
   end
 
-  defp create_chunk_remanent(_, partial_content, incomplete) do
+  defp create_chunk_remanent(_, _partial_content, incomplete) do
     incomplete
     |> String.replace(~r/^,(?={)/, "")
   end
@@ -183,23 +176,6 @@ defmodule Teamplace do
       []
     end
   end
-
-  defp db(item) do
-    try do
-      Poison.decode!(item)
-    rescue
-      e ->
-        IO.puts("------------" <> item <> "---------------")
-        %{}
-    end
-  end
-
-  defp create_chunk_remanent([], partial_content, incomplete) do
-    partial_content <> incomplete
-    # |> String.replace(~r/^,(?={)/, "")
-  end
-
-  defp create_chunk_remanent(_, _partial_content, incomplete), do: incomplete
 
   defp extract_maps_if_any(partial_content) do
     if partial_content |> String.match?(~r/(?<=}),/) do
@@ -213,7 +189,7 @@ defmodule Teamplace do
     try do
       Poison.decode!(item)
     rescue
-      e ->
+      _ ->
         IO.puts("ERROR DECODING ITEM")
         %{}
     end

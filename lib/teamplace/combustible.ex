@@ -1,13 +1,14 @@
 defmodule Teamplace.Combustible do
   alias Teamplace.Factura
   alias Teamplace.Factura.{Producto, Concepto}
+  alias Teamplace.Helper
   alias Decimal, as: D
 
   @decimals 3
 
   def cargar(numero_comprobante, proveedor_codigo, cantidad, neto, exento) do
     %Factura{
-      IdentificacionExterna: uuid,
+      IdentificacionExterna: Helper.uuid(),
       NumeroComprobante: numero_comprobante,
       Proveedor: proveedor_codigo,
       ImporteTotal: D.new(neto) |> D.mult(D.new(1.21)) |> D.add(D.new(exento))
@@ -55,6 +56,4 @@ defmodule Teamplace.Combustible do
   defp fix(decimal),
     do: decimal |> D.to_float() |> :erlang.float_to_binary([:compact, {:decimals, @decimals}])
 
-  defp uuid,
-    do: :rand.uniform() |> Float.to_string() |> String.replace(~r/0\./, "") |> String.slice(0..8)
 end

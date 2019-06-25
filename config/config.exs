@@ -2,29 +2,16 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
-# This configuration is loaded before any dependency and is restricted
-# to this project. If another project depends on this project, this
-# file won't be loaded nor affect the parent project. For this reason,
-# if you want to provide default values for your application for
-# 3rd-party users, it should be done in your "mix.exs" file.
+config :teamplace,
+  credentials: %{
+    client_id: System.get_env("TEAMPLACE_CLIENT_ID"),
+    client_secret: System.get_env("TEAMPLACE_CLIENT_SECRET")
+  }
 
-# You can configure your application as:
-#
-# config :teamplace, api_base: "AlternativeApiBase", query_prefix: "AlternativeQueryParamPrefix_"
-#
-# and access this configuration in your application as:
-#
-#     Application.get_env(:teamplace, :key)
-#
-# You can also configure a 3rd-party app:
-#
-#     config :logger, level: :info
-#
+config :teamplace,
+  api_base: System.get_env("TEAMPLACE_API_BASE")
 
-# It is also possible to import configuration files, relative to this
-# directory. For example, you can emulate configuration per environment
-# by uncommenting the line below and defining dev.exs, test.exs and such.
-# Configuration from the imported file will override the ones defined
-# here (which is why it is important to import them last).
-#
+config :teamplace,
+  bcra_token: System.get_env("TEAMPLACE_BCRA_TOKEN")
+
 #     import_config "#{Mix.env}.exs"
