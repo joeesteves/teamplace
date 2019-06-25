@@ -20,6 +20,7 @@ defmodule Teamplace.Cobranza.CtaCte do
             DebeHaber: "-1",
             ImporteMonTransaccion: "100",
             ImporteMonPrincipal: "100",
+            Cotizacion: 1,
             MonedaCodigo: "PES",
             Descripcion: ""
 end
@@ -44,13 +45,15 @@ defmodule Teamplace.Cobranza do
             TransaccionTipoCodigo: "OPERTESORERIA",
             TransaccionSubtipoCodigo: "COBRANZA",
             Fecha: "#{Date.utc_today()}",
-            DiferenciaCambio: "0",
-            UsaCotizacionOrigen: "0",
+            DiferenciaCambio: 0,
+            UsaCotizacionOrigen: 0,
             Descripcion: "",
             Banco: [],
             Otros: [],
             CtaCte: [],
-            Cotizaciones: [%Cotizacion{MonedaCodigo: "PES", Cotizacion: "1"}]
+            Cotizaciones: [
+              %Cotizacion{MonedaCodigo: "PES", Cotizacion: 1.00}
+            ]
 
   def add_banco(%Cobranza{} = cobranza, %Banco{} = banco) do
     Map.update!(cobranza, :Banco, &[banco | &1])
@@ -66,13 +69,13 @@ defmodule Teamplace.Cobranza do
 
   def add_dolar_price(%Cobranza{} = cobranza) do
     Map.update!(cobranza, :Cotizaciones, fn cot ->
-      [
-        %Cotizacion{
-          MonedaCodigo: "DOL",
-          Cotizacion: Teamplace.Helper.bcra_dolar_price()
-        }
-        | cot
-      ]
+      cot ++
+        [
+          %Cotizacion{
+            MonedaCodigo: "DOL",
+            Cotizacion: Teamplace.Helper.bcra_dolar_price()
+          }
+        ]
     end)
   end
 end
