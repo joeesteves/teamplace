@@ -49,7 +49,6 @@ defmodule Teamplace do
     create_stream(buffer_pid)
   end
 
-
   @doc """
   Get's actual token is exists or generates new one
   """
@@ -72,12 +71,8 @@ defmodule Teamplace do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
 
-      {:ok, e} ->
-        IO.inspect(e)
-        error
-
-      {:error, _} ->
-        error
+      {_, e} ->
+        {:error, e}
     end
   end
 
