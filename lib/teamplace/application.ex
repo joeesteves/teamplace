@@ -22,15 +22,25 @@ defmodule Teamplace.Application do
   end
 
   defp ensure_required_envs do
-    credentials = Application.get_env(:teamplace, :credentials)
-    api_base = Application.get_env(:teamplace, :api_base)
-    bcra_token = Application.get_env(:teamplace, :bcra_token)
-    suggestion = ". Please set them on config.exs and try again"
+    case Application.get_env(:teamplace, :multi_user) do
+      x when x in [nil, false] ->
+        credentials = Application.get_env(:teamplace, :credentials)
+        api_base = Application.get_env(:teamplace, :api_base)
+        bcra_token = Application.get_env(:teamplace, :bcra_token)
+        suggestion = ". Please set them on config.exs and try again"
 
-    credentials[:client_id] || raise "Missing :teamplace, credentials[:client_id]  env" <> suggestion
-    credentials[:client_secret] || raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
-    api_base || raise "Missing :teamplace, api_base env" <> suggestion
-    bcra_token || raise "Missing :teamplace, bsra_token env" <> suggestion
-    true
+        credentials[:client_id] ||
+          raise "Missing :teamplace, credentials[:client_id]  env" <> suggestion
+
+        credentials[:client_secret] ||
+          raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
+
+        api_base || raise "Missing :teamplace, api_base env" <> suggestion
+        bcra_token || raise "Missing :teamplace, bsra_token env" <> suggestion
+        true
+
+      _ ->
+        true
+    end
   end
 end

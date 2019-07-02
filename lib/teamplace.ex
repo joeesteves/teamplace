@@ -77,16 +77,20 @@ defmodule Teamplace do
   end
 
   def url_factory(credentials, resource) do
-    Application.get_env(:teamplace, :api_base) <>
+    api_base(credentials) <>
       resource <>
       "?ACCESS_TOKEN=" <> get_token(credentials)
   end
 
   def url_factory(credentials, resource, action, params \\ nil) do
-    Application.get_env(:teamplace, :api_base) <>
+    api_base(credentials) <>
       resource <>
       "/" <>
       action <> "?ACCESS_TOKEN=" <> get_token(credentials) <> Helper.param_query_parser(params)
+  end
+
+  defp api_base(credentials) do
+    credentials[:api_base] || Application.get_env(:teamplace, :api_base)
   end
 
   defp buffer({data, _status} = acc \\ {[], :stream}, remanent \\ "") do
@@ -213,8 +217,8 @@ defmodule Teamplace do
     end
   end
 
-  defp auth_url(%{client_id: client_id, client_secret: client_secret}) do
-    Application.get_env(:teamplace, :api_base) <>
+  defp auth_url(%{client_id: client_id, client_secret: client_secret} = credentials) do
+    api_base(credentials) <>
       "oauth/token?grant_type=client_credentials&client_id=#{client_id}&client_secret=#{
         client_secret
       }"
