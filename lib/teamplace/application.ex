@@ -30,7 +30,7 @@ defmodule Teamplace.Application do
         suggestion = ". Please set them on config.exs and try again"
 
         credentials[:client_id] ||
-          raise "Missing :teamplace, credentials[:client_id]  env" <> suggestion
+          raise "Missing :teamplace, credentials[:client_id] env" <> suggestion
 
         credentials[:client_secret] ||
           raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
