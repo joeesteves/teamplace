@@ -61,18 +61,17 @@ defmodule Teamplace do
   """
   def post_data(credentials, resource, data) do
     headers = [{"content-type", "application/json"}]
-    error = {:error, "Hubo un error"}
 
     case HTTPoison.post(url_factory(credentials, resource), data, headers) do
-      %HTTPoison.Response{status_code: 406} ->
+      {:ok, %HTTPoison.Response{status_code: 406}} ->
         new_token(credentials)
         post_data(credentials, resource, data)
 
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
 
-      {_, e} ->
-        {:error, e}
+      {_, _} ->
+        {:error, "Hubo un error"}
     end
   end
 
