@@ -7,7 +7,8 @@ defmodule Teamplace.Application do
 
   def start(_type, _args) do
     # List all child processes to be supervised
-    ensure_required_envs() && IO.puts("Teamplace - All envs are correctly setted ✔")
+    ensure_required_envs() &&
+      IO.puts("Teamplace - All envs are correctly setted ✔")
 
     children = [
       # Starts a worker by calling: Teamplace.Worker.start_link(arg)
@@ -36,7 +37,12 @@ defmodule Teamplace.Application do
           raise "Missing :teamplace, credentials[:client_secret] env" <> suggestion
 
         api_base || raise "Missing :teamplace, api_base env" <> suggestion
-        bcra_token || raise "Missing :teamplace, bsra_token env" <> suggestion
+
+        bcra_token ||
+          IO.warn(
+            "Missing :teamplace, bsra_token env. They are needed for transactions operations"
+          )
+
         true
 
       _ ->
