@@ -70,7 +70,8 @@ defmodule Teamplace do
       {:ok, %HTTPoison.Response{status_code: 200}} ->
         {:ok, "Registro Creado"}
 
-      {_, _} ->
+      {_, e} ->
+        IO.inspect(e)
         {:error, "Hubo un error"}
     end
   end
@@ -204,11 +205,12 @@ defmodule Teamplace do
   end
 
   defp new_token(credentials) do
-    case auth_url(credentials)
-         |> HTTPoison.get!() do
+    case HTTPoison.get!(auth_url(credentials)) do
       %HTTPoison.Response{status_code: 406} ->
         raise ArgumentError, message: "check client_id or client_secret"
 
+      %HTTPoison.Response{status_code: 500} ->
+        raise ArgumentError, message: "Probably credentials expired. Renew on teamplace and try again"
       response ->
         response
         |> Map.get(:body)
