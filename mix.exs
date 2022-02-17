@@ -32,7 +32,7 @@ defmodule Teamplace.MixProject do
       {:httpoison, "~> 1.2"},
       {:poison, "~> 3.0"},
       {:ex_doc, "~> 0.20.0", only: :dev, runtime: false},
-      {:decimal, "~> 1.0"}
+      {:decimal, "~> 1.0 or ~> 2.0"}
     ]
   end
 end
